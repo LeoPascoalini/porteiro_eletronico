@@ -4,8 +4,8 @@
 LiquidCrystal lcd (7,8,9,10,11,12);
 
 //----------------Variaveis------------------
-String gabarito = "12A45B";
-String gabaritoADM = "402404";
+String gabarito = "123456";
+String gabaritoADM = "246810";
 String senha = "";
 int comparaGabarito;
 int comparaGabaritoADM;
