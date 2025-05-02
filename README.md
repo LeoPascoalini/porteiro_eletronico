@@ -1,4 +1,4 @@
-###Relação de conexão entradas cabo RJ45
+Relação de conexão entradas cabo RJ45
 
 | Posição Teclado | Matricial | Cor            | Entrada Arduino |
 |-----------------|-----------|----------------|-----------------|
