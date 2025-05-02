@@ -1,90 +1,38 @@
-#include <LiquidCrystal.h>
 #include <Keypad.h>
+#include <EEPROM.h>
 
-LiquidCrystal lcd (7,8,9,10,11,12);
-
-//----------------Variaveis------------------
+//------------------ Variáveis ------------------
 String gabarito = "123456";
 String gabaritoADM = "246810";
 String senha = "";
+char caractere;
 int comparaGabarito;
 int comparaGabaritoADM;
 int buzz = 13;
 int dig = 0;
-int LCDbrightness = 1023;
-const unsigned long timeoutDuration = 10000;  // tempo ligado
-unsigned long lastKeyPressTime = 0; //ultima vez de tecla pressionada
-//-------------------------------------------
+const unsigned long timeoutDuration = 10000;
+unsigned long lastKeyPressTime = 0;
+//----------------------------------------------
 
-//---------------------------Variaveis do teclado----------------------------------------
-const byte ROWS = 4; //four rows
-const byte COLS = 4; //three columns
+//------------------ Teclado --------------------
+const byte ROWS = 4;
+const byte COLS = 3;
 
 char keys[ROWS][COLS] =
 {
-  {'1','2','3','A'},
-  {'4','5','6','B'},
-  {'7','8','9','C'},
-  {'*','0','-','D'}
+  {'1','2','3'},
+  {'4','5','6'},
+  {'7','8','9'},
+  {'*','0','-'}
 };
 
-byte rowPins[ROWS] = {A5, A4, A3, A2}; //connect to the row pinouts of the keypad
-byte colPins[COLS] = {3, 4, 5, 6}; //connect to the column pinouts of the keypad
-//---------------------------------------------------------------------------------------
+byte rowPins[ROWS] = {7, 8, 9, 10}; // Linhas do teclado
+byte colPins[COLS] = {4, 5, 6};     // Colunas do teclado
 
-//----------------------------Char-------------------------------------------------------
-byte lamp[8]=
-{B00000, B00011, B00100, B00100, B00100, B00011, B00011, B00011};
+Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
+//----------------------------------------------
 
-byte LP[8]=
-{B10000, B10100, B10100, B10110, B10000, B10110, B10110, B10100};
-
-byte CF[8]=
-{B00000, B01110, B10001, B10001, B11111, B11011, B11011, B11111};
-
-byte CA[8]=
-{B01110, B10001, B10001, B00001, B01111, B11011, B11011, B11111};
-
-byte novo[8]=
-{B00111, B01001, B10000, B10010, B10111, B10010, B10000, B11111};
-//---------------------------------------------------------------------------------------
-
-Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS );
-
-void impressao(char caracter)
-{
-  buzzer();
-  lcd.setCursor(dig, 1);
-  lcd.print(caracter);
-  dig++;
-}
-
-void comparador(char keys)
-{
-  comparaGabarito = senha.compareTo(gabarito);
-  comparaGabaritoADM = senha.compareTo(gabaritoADM);
-  senha += keys;
-}
-
-void resetar()
-{
-  senha = "";
-  delay(1000);
-  lcd.home();
-  lcd.write(byte(3));
-  lcd.print(" Senha:      ");
-  lcd.setCursor(0, 1);
-  lcd.print("                ");
-  dig = 0;
-}
-
-void abrir()
-{
-  digitalWrite(2, LOW);
-  delay(500);
-  digitalWrite(2, HIGH);
-}
-
+//------------------ Funções --------------------
 void buzzer()
 {
   tone(buzz, 1568);
@@ -94,127 +42,140 @@ void buzzer()
 
 void zelda()
 {
-  tone(buzz, 1568);
-  delay(200);
-  tone(buzz, 1481.5);
-  delay(200);
-  tone(buzz, 1246.6);
-  delay(200);
-  tone(buzz, 880);
-  delay(200);
-  tone(buzz, 826);
-  delay(200);
-  tone(buzz, 1318.5);
-  delay(200);
-  tone(buzz, 1664);
-  delay(150);
-  tone(buzz, 2093);
-  delay(250);
+  tone(buzz, 1568); delay(200);
+  tone(buzz, 1481); delay(200);
+  tone(buzz, 1246); delay(200);
+  tone(buzz, 880);  delay(200);
+  tone(buzz, 826);  delay(200);
+  tone(buzz, 1318); delay(200);
+  tone(buzz, 1664); delay(150);
+  tone(buzz, 2093); delay(250);
   noTone(buzz);
 }
 
-//---------------------------------------------*Setup*-------------------------------------------------------------
+void abrir()
+{
+  digitalWrite(2, LOW);
+  delay(500);
+  digitalWrite(2, HIGH);
+}
+
+void resetar()
+{
+  senha = "";
+  dig = 0;
+  delay(1000);
+}
+
+void save_gabarito()
+{
+  for (int i = 0; i < gabarito.length(); i++)
+    EEPROM.write(i, gabarito[i]);
+  EEPROM.write(gabarito.length(), '\0');
+}
+
+void load_gabarito()
+{
+  gabarito = "";
+  for (int i = 0; i < 50; i++)
+  {
+    caractere = EEPROM.read(i);
+    if (caractere == '\0') break;
+    gabarito += caractere;
+  }
+}
+
 void setup()
 {
   pinMode(buzz, OUTPUT);
-  pinMode(2 , OUTPUT);
-  pinMode(A1, OUTPUT); 
-  
-  digitalWrite(2, HIGH);
-  analogWrite(A1, LCDbrightness);
+  pinMode(2, OUTPUT);
+  digitalWrite(2, HIGH); // trava o sistema
 
-  lcd.begin(2, 16);
-  lcd.createChar(1, lamp);
-  lcd.createChar(2, LP);
-  lcd.createChar(3, CF);
-  lcd.createChar(4, CA);
-  lcd.createChar(5, novo);
-  lcd.home();
-  lcd.write(byte(3));
-  lcd.print(" Senha:      ");
-  lcd.write(byte(1));
-  lcd.write(byte(2));
-  lcd.setCursor(0,1);
+  Serial.begin(9600);
+  load_gabarito();
+  Serial.print("Senha carregada da EEPROM: ");
+  Serial.println(gabarito);
 }
 
 void loop()
 {
   char key = keypad.getKey();
-  retorno:
-  
 
   if (key != NO_KEY)
   {
     lastKeyPressTime = millis();
-    analogWrite(A1, LCDbrightness);
-    comparador(key);
-    impressao('*');
 
+    if (key == '*') // Cancelar
+    {
+      Serial.println("Senha cancelada.");
+      buzzer();
+      resetar();
+      return;
+    }
+
+    if (key == '-') // Enviar
+    {
+      if (senha.length() == 0)
+      {
+        Serial.println("Nenhuma senha digitada. Reiniciando.");
+        resetar();
+        return;
+      }
+
+      comparaGabarito = senha.compareTo(gabarito);
+      comparaGabaritoADM = senha.compareTo(gabaritoADM);
+
+      if (comparaGabarito == 0)
+      {
+        Serial.println("Senha correta! Abrindo...");
+        abrir();
+        zelda();
+      }
+      else if (comparaGabaritoADM == 0)
+      {
+        Serial.println("Modo administrador: digite nova senha de 6 dígitos.");
+        gabarito = "";
+        while (gabarito.length() < 6)
+        {
+          char newKey = keypad.getKey();
+          if (newKey != NO_KEY && isDigit(newKey))
+          {
+            gabarito += newKey;
+            Serial.print("Nova senha: ");
+            Serial.println(gabarito);
+            buzzer();
+          }
+        }
+        save_gabarito();
+        Serial.print("Nova senha salva na EEPROM: ");
+        Serial.println(gabarito);
+      }
+      else
+      {
+        Serial.println("Senha incorreta.");
+        buzzer();
+      }
+
+      resetar(); // Sempre resetar após enviar
+      return;
+    }
+
+    // Se for dígito, adiciona à senha
+    if (isDigit(key))
+    {
+      senha += key;
+      dig++;
+      buzzer();
+      Serial.print("Senha atual: ");
+      Serial.println(senha);
+    }
+
+    // Se a senha for muito longa, reseta
     if (senha.length() > 10)
     {
+      Serial.println("Senha muito longa! Reiniciando.");
       resetar();
       buzzer();
-      key = 0;
-      goto retorno;
     }
-    
-    switch(key)
-    {
-      case '-':
-        if (comparaGabarito == 0)
-        {
-          lcd.home();
-          lcd.write(byte(4));
-          lcd.setCursor(0, 1);
-          lcd.print("Bem-Vindo       ");
-          abrir();
-          zelda();
-          resetar();
-        }
-        else if (comparaGabaritoADM == 0)
-        {
-          resetar();
-          lcd.home();
-          lcd.write(byte(5));
-          lcd.setCursor(1, 0);
-          lcd.print(" Nova Senha:");
-          lcd.setCursor(0, 1);
-          key = 0;
-          while (dig < 6)
-          {
-            char key = keypad.getKey();
-            if (key != NO_KEY)
-            {
-              gabarito.setCharAt(dig, key);
-              impressao(key);
-              key = 0;
-            }
-          }
-          resetar();
-        } 
-        else
-        {
-          lcd.setCursor(0, 1);
-          lcd.print("Senha Incorreta ");
-          resetar();
-        }
-        key = 0;
-        goto retorno;
-
-      case '*':
-        resetar();
-        buzzer();
-        key = 0;
-        goto retorno;
-
-      default:
-        key = 0;
-        goto retorno;
-    }
-  }
-
-  if (millis() - lastKeyPressTime > timeoutDuration)
-  {
-    analogWrite(A1, 0);
   }
 }
