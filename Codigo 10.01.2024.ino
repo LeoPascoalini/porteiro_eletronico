@@ -55,9 +55,9 @@ void zelda()
 
 void abrir()
 {
-  digitalWrite(2, LOW);
-  delay(500);
   digitalWrite(2, HIGH);
+  delay(500);
+  digitalWrite(2, LOW);
 }
 
 void resetar()
@@ -89,7 +89,7 @@ void setup()
 {
   pinMode(buzz, OUTPUT);
   pinMode(2, OUTPUT);
-  digitalWrite(2, HIGH); // trava o sistema
+  digitalWrite(2, LOW); // trava o sistema
 
   Serial.begin(9600);
   load_gabarito();
